@@ -4,9 +4,18 @@ import Address from 'App/Models/Address'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 
 export default class UsersController {
-  public async index({response}: HttpContextContract) {
-    const users = await User.query().preload('addresses')
-    return response.json(users)
+  public async index({auth, response}: HttpContextContract) {
+    const users = auth.user!
+    await users.load('role')
+
+    if (users.role.slug === 'admin') {
+      const users = await User.query().preload('addresses')
+      return response.json(users)
+    }
+    else {
+      await users.load('addresses')
+      return response.json(users)
+    }
   }
   public async show({ params, response }: HttpContextContract) {
     const user = await User.findOrFail(params.id)
